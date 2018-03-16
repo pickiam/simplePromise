@@ -17,12 +17,6 @@ Promise.prototype.resolve = function(value) {
     this.state = 'fulfilled';
     this.value = value;
 
-    setTimeout(() => {
-        if (!this.onfulfilled) return;
-        console.log(5)
-        this.onfulfilled();
-    }, 0);
-
 }
 //reject作用主要是pending => rejected
 Promise.prototype.reject = function(value) {
@@ -30,10 +24,6 @@ Promise.prototype.reject = function(value) {
 
     this.state = 'rejected';
     this.value = value;
-    setTimeout(() => {
-        if (!this.onrejected) return;
-        this.onrejected();
-    }, 0);
 }
 //fulfilled,rejected的执行需要异步，then方法需要返回一个新的promise
 Promise.prototype.then = function(fulfilled, rejected) {
@@ -43,41 +33,31 @@ Promise.prototype.then = function(fulfilled, rejected) {
     }
 
     var self = this;
-    return new Promise((resolve, reject) => {
-        if (fulfilled && typeof fulfilled == 'function') {
-            var onfulfilled = function() {
-                try {
-                    var result = fulfilled(self.value);
-                    if (result && result.then == 'function') {
-                        result.then(resolve,reject)
-                    } else {
-                        resolve(result)
-                    }
-                  
-                } catch (error) {
-                    reject(error)
+    var promsie = new this.constructor();
+    if(fulfilled && typeof fulfilled == 'function' && this.state == 'fulfilled') {
+        setTimeout(() => {
+            try {
+                let result = fulfilled(self.value);
+                if (result && typeof result.then == 'function') {
+                    
                 }
+                promise.resolve(result)
+            } catch (error) {
+                promise.reject(error)
             }
-            if (that.state === 'pending') {
-                that.onfulfilled = onfulfilled;
-            } else {
-                onfulfilled()
+        }, 0);
+    }
+    if (rejected && typeof rejected == 'function' && this.state == 'rejected') {
+        setTimeout(() => {
+            try {
+                let result = rejected(self.value);
+                promise.resolve(result)
+            } catch (error) {
+                promise.reject(error)
             }
-           
-        }
-
-        if (rejected && typeof rejected == 'function') {
-            var onrejected = function() {
-                try {
-                    var result = rejected(self.value);
-                    resolve(result)
-                } catch (error) {
-                    reject(error)
-                }
-            }
-            onrejected()
-        }
-    })
+        }, 0);
+    }
+    return promise
 }
 
 var promise = new Promise((resolve,reject)=> {
@@ -86,5 +66,6 @@ var promise = new Promise((resolve,reject)=> {
 })
 
 promise.then(res => {
-    return 3
+    console.log(res)
+    return '31'
 }).then(res => console.log(res))
